@@ -48,7 +48,20 @@ jobs:
       - name: Innosetup windows-terminservice-gui
         # Run innosetup and set application version to git tag
         run: ../innosetup/ISCC.exe specs/windows-terminservice-gui.iss /DApplicationVersion=${{ env.GIT_TAG_NAME }}
+
+      - name: Create Code Signing Certificate
+        run: |
+          New-Item -ItemType directory -Path certificate
+          Set-Content -Path certificate\certificate.txt -Value '${{ secrets.CERTIFICATE }}'
+          certutil -decode certificate\certificate.txt certificate\certificate.pfx
       
+      - name: Code Sign 2021 Windows Installer
+        run: |
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /f certificate\certificate.pfx /p '${{ secrets.CERT_PASSWORD }}' /t http://timestamp.comodoca.com/authenticode installers/vaccipy_installer.exe
+      - name: Code Sign 2021 Windows GUI Installer
+        run: |
+          & 'C:/Program Files (x86)/Windows Kits/10/bin/10.0.17763.0/x86/signtool.exe' sign /f certificate\certificate.pfx /p '${{ secrets.CERT_PASSWORD }}' /t http://timestamp.comodoca.com/authenticode installers/vaccipy_gui_installer.exe
+
       - name: Zip Windows
         uses: papeloto/action-zip@v1
         with:
